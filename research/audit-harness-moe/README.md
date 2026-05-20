@@ -34,8 +34,17 @@ python audit_pipeline.py --candidate <CANDIDATE_URL> --auditor <SOMA_PROXY_URL> 
 ```
 
 ## Citation
-The methodology and empirical results are described in detail in the following post:
-> [Citation placeholder: Paired Capability-Control Tests for Behavioral Audit of MoE Fine-Tunes]
+
+A standalone methodology write-up is in preparation. Until it is published,
+the empirical claims above (Config A vs Config A2 results, 84.7% pass rate,
++1.9pp over SFT baseline) should be cited as Observed-on-internal-run with
+the harness commit SHA as the only verifiable artifact; the paired-control
+methodology itself is described in `DESIGN.md`. If you cite this work
+publicly before the methodology post lands, prefer "PALIOS-TAEY audit
+harness (in preparation), commit `<sha>`" to a numerical claim presented
+as peer-reviewed.
 
 ## License
-[License placeholder: Apache 2.0 / MIT]
+
+Apache-2.0. See the [LICENSE file at the repository
+root](https://github.com/palios-taey/research/blob/main/LICENSE).
