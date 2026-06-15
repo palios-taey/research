@@ -10,7 +10,7 @@ Step-by-step to re-run the PALIOS-TAEY training pipeline on equivalent hardware.
 
 - Python 3.10 / PyTorch with CUDA 13.0 support for sm_121
 - NCCL 2.28.9, ConnectX-7 firmware 28.45.4028
-- Weaviate 1.x (port 8088), Neo4j 5.x (port 7689 no-auth or 7687 with `***REMOVED***`), Redis 7.x (port 6379)
+- Weaviate 1.x (port 8088), Neo4j 5.x (port 7689 no-auth or 7687 with `<your-neo4j-password>`), Redis 7.x (port 6379)
 - `transformers` + `peft` + `accelerate` + `datasets` (versions as locked in `requirements.txt`)
 - Base models from Hugging Face: `Qwen3.5-9B-Base`, `Huihui-Qwen3.5-35B-A3B-abliterated`
 
@@ -49,10 +49,10 @@ Expected: clean run at 10–12.57 GB/s; no `IBV_WC_RETRY_EXC_ERR`. If the probe 
 
 ### 2.1 SFT baseline → phase_combined_v1
 
+> **Note on naming.** There is no `launch_phase_combined_v1.sh` shipped — the `phase_combined_v1` checkpoint is produced by `launch_production_sft.sh` with `OUTPUT_DIR` set as shown below. Downstream launchers (`launch_phase_combined_v1_tail*`, `launch_religion_dpo_v*`) `RESUME` from `phase_combined_v1/final` step 582 against this output path.
+
 ```bash
 # 4-Spark FSDP, fresh from abliterated base
-# (No launcher named launch_phase_combined_v1.sh; produced by launch_production_sft.sh
-#  with OUTPUT_DIR override. Downstream launchers RESUME from phase_combined_v1/final step 582.)
 export MODEL_PATH=/home/spark/models/Huihui-Qwen3.5-35B-A3B-abliterated
 export OUTPUT_DIR=/home/spark/training_outputs/phase_combined_v1
 export TOTAL_STEPS=982   # adjust per corpus
@@ -72,6 +72,8 @@ Audit verdict expected: ~82.8% on the 163-probe constitutional battery.
 ```bash
 # Resume from phase_combined_v1/final step 582; same data + identical hyperparams as v1
 # (only freeze config differs); 4-Spark FSDP.
+# MODEL_PATH = architecture base for model init; RESUME_DELTA carries the trained-weights checkpoint
+# (the DPO trainer loads architecture from MODEL_PATH then resumes weights from RESUME_DELTA).
 export MODEL_PATH=/home/spark/models/Huihui-Qwen3.5-35B-A3B-abliterated
 export RESUME_DELTA=/home/spark/training_outputs/phase_combined_v1/final
 export DPO_DATA=/home/spark/training_data/religion_run_v1/religion_v3_dpo_pairs_with_ref.jsonl

@@ -59,7 +59,7 @@ Full citation chains, three-register tables, code references, and supporting det
 
 | structure | citation |
 |---|---|
-| Motif dictionary — currently **55 motifs across slow/mid/fast bands** | `isma/src/hmm/motifs.py:20-37`; verified by loading `V0_MOTIFS` in current tree (older 36-motif claim is stale) |
+| Motif dictionary — currently **55 motifs across slow/mid/fast bands** | `isma/src/hmm/motifs.py:20-37` in the internal `embedding-server` working repo (not yet public); count is `[Inferred — unverifiable from public surface alone]` until source ports; older 36-motif claim is stale |
 | Motif assignment (typed: `amp`, `phase`, `confidence`, `source`, `dictionary_version`) | `isma/src/hmm/motifs.py:30-37` |
 | Redis inverted index + resonance fields | `isma/src/hmm/redis_store.py:4-7`, `:62-258` |
 | Neo4j supersession chains + contradictions + session reconstruction | `isma/src/hmm/neo4j_store.py:380-715` |

@@ -27,6 +27,8 @@ We do not claim a single headline R@10 number. See Section 5 for why and what we
 
 ## 2. Novel architectural contributions
 
+> **A note on code citations in this section.** File:line references like `isma/src/query_classifier.py:261-340` point to the internal `embedding-server` working repo (not yet public). They are included as provenance — they record where the implementation lives in the codebase that produced these results — not as reader-navigable links. A reader of only this public repo cannot follow them to source; treat them as `[Inferred — unverifiable from public surface alone]` per three-register discipline until those files are ported.
+
 ### 2.1 ISMA — multi-substrate memory, not just "vector DB plus graph"
 
 Four mechanisms that the code shows are differentiated from commodity RAG:
@@ -35,7 +37,7 @@ Four mechanisms that the code shows are differentiated from commodity RAG:
 
 **(b) Multi-scale memory where chunk scale is a first-class retrieval primitive.** Tiles exist at `search_512`, `context_2048`, and `full_4096` scales, plus `rosetta` summaries. The system expands `search_512` hits into parent `context_2048` tiles (`isma/src/retrieval.py:849-872`), reconstructs full documents from `full_4096` tiles with overlap removal (`isma/src/retrieval.py:1840-1887`), and at dedup time prefers the smaller-scale (passage-level) evidence over broader scales sharing the same `content_hash` (`isma/src/retrieval_v2.py:1451-1468`). Chunk scale is not just an ingest detail — it's a retrieval-time policy.
 
-**(c) HMM motif memory across three stores.** Motif assignments are typed objects with `amp`, `phase`, `confidence`, `source`, and `dictionary_version` (`isma/src/hmm/motifs.py:30-37`). Redis holds inverted motif indices and resonance fields. Neo4j holds `EXPRESSES`, `SUPERSEDES`, `CONTRADICTS`, `IN_SESSION` edges, supersession chains, and session-reconstruction paths (`isma/src/hmm/neo4j_store.py:380-715`). The active motif dictionary is currently **55 motifs across slow/mid/fast bands** (verified by loading `V0_MOTIFS` in the current tree; an older 36-motif claim is stale). Commodity RAG frameworks do not usually model recurring semantic primitives as typed, queryable memory motifs across multiple coordinated stores.
+**(c) HMM motif memory across three stores.** Motif assignments are typed objects with `amp`, `phase`, `confidence`, `source`, and `dictionary_version` (`isma/src/hmm/motifs.py:30-37`). Redis holds inverted motif indices and resonance fields. Neo4j holds `EXPRESSES`, `SUPERSEDES`, `CONTRADICTS`, `IN_SESSION` edges, supersession chains, and session-reconstruction paths (`isma/src/hmm/neo4j_store.py:380-715`). The active motif dictionary is currently **55 motifs across slow/mid/fast bands** (verified in the internal `embedding-server` working repo at `isma/src/hmm/motifs.py:20-37`; that file is not yet public, so this count is `[Inferred — unverifiable from public surface alone]` until the source ports; an older 36-motif claim is stale). Commodity RAG frameworks do not usually model recurring semantic primitives as typed, queryable memory motifs across multiple coordinated stores.
 
 **(d) Triple-write enrichment with compensating rollback across substrates.** The enrichment path (`isma/scripts/hmm_store_results.py:641-1045`) patches all base Weaviate tiles for a `content_hash`, creates or updates a searchable Rosetta tile, updates the V2 canonical object, writes Neo4j HMM state in an explicit transaction, and rewrites Redis motif index entries — and rolls all of that back on partial failure. This is unusual rigor for retrieval-system enrichment, which is typically eventual-consistency annotation.
 
@@ -142,6 +144,8 @@ If you find a claim in this repo that we shouldn't be making, please open an iss
 ## License + use
 
 This repo ships recipes, configs, and the operational narrative. Weights and corpora are released separately under a license appropriate to their content. License files specify per-asset terms.
+
+Released weights will be linked from a forthcoming `WEIGHTS.md` index in this subdirectory once per-asset licenses are finalized; until then, the recipe + corpus structure + frozen-experts mask are the reproducible path documented in `REPRODUCE.md`.
 
 ---
 
