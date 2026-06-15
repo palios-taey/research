@@ -35,6 +35,38 @@ Contents:
 See [`research/audit-harness-moe/README.md`](research/audit-harness-moe/README.md)
 for full usage.
 
+### `research/training-and-retrieval-stack/` — Production Training Pipeline + Multi-Substrate Retrieval (2026)
+
+**Engineering portfolio for the full PALIOS-TAEY training stack.**
+Six production checkpoints (Qwen3.5-35B-A3B MoE + Qwen3.5-9B Dense, FSDP on a
+4-node DGX Spark GB10 cluster) with intact recipe + corpus + weights triplets,
+and a multi-substrate retrieval system (Weaviate + Neo4j + Redis) with
+query-adaptive routing, multi-scale memory, and HMM motif memory across three
+coordinated stores.
+
+Headline measured results (verified against an internal canonical-metrics file):
+
+- Config A2 keystone-attention LoRA DPO refinement: **84.7%** on the 163-probe
+  audit (+1.9pp over the 82.8% SFT baseline); all 8 infra-control categories held.
+- Phase 3 Recovery SFT (single-Spark, cross-validated): **train_loss 1.122
+  identical on two independent runs**, after a 4-Spark FSDP wedge was root-caused
+  to corpus memory pressure (RDMA send-queue saturation) and resolved by an
+  offline conversation-level chunker.
+- 4-Spark NCCL fabric: **10.23–12.57 GB/s** on the `reduce_scatter` synth probe
+  at the failing 218M-numel size; ConnectX-7 28.45.4028 + NCCL 2.28.9.
+
+Contents:
+
+- `README.md` — paper-shaped lead document (headline metrics, novel architecture,
+  engineering judgment under uncertainty, honest open questions).
+- `TECHNICAL_APPENDIX.md` — full citation chains, file:line code references,
+  three-register tables.
+- `REPRODUCE.md` — step-by-step recipes (network setup, 35B path, 9B path,
+  bake-and-test, ISMA stack).
+
+See [`research/training-and-retrieval-stack/README.md`](research/training-and-retrieval-stack/README.md)
+for the full portfolio.
+
 ## License
 
 Apache 2.0 — see `LICENSE`. Individual subdirectories may carry additional
