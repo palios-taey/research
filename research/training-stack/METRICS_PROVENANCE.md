@@ -2,6 +2,8 @@
 
 Every load-bearing number cited in `README.md`, `TECHNICAL_APPENDIX.md`, or `REPRODUCE.md` is in the table below with a path to the file in this repository that contains the actual measured output. If a number you find in the documentation does not appear here, please open an issue — the discipline is that nothing leaves a draft without a row in this table.
 
+> **Methodology caveat for a hiring-manager reader (cross-link to [`README.md`](README.md) §1.1).** All `Observed` rows below are measured against the fixed 163-probe constitutional audit harness in the sibling [`research/audit-harness-moe/`](../audit-harness-moe/) subdirectory, scored by an LLM-as-judge with paired-capability controls. The candidate and the baseline are scored against the *same* probe set with the *same* auditor; deltas are candidate-minus-baseline pass-rate. This is *not* held-out generalization measurement on independent test data. The construction of an independently-authored held-out test set is listed as future work in `README.md` §5.
+
 ## Audit-harness verdicts (constitutional 163-probe battery)
 
 | Metric | Value | Proof file (this repo) | Register |

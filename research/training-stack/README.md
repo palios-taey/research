@@ -23,6 +23,18 @@ Production training recipes (Qwen3.5-35B-A3B MoE + Qwen3.5-9B Dense, FSDP on a 4
 | 4-Spark NCCL fabric (synth probe, `reduce_scatter` 218M-numel fp32) | **10.23 GB/s** (50 iters), sustaining to **12.57 GB/s** (160-collective run); no `IBV_WC_RETRY_EXC_ERR`; ConnectX-7 28.45.4028 + NCCL 2.28.9 | [`proof_of_run/nccl_synth_probe_results.md`](proof_of_run/nccl_synth_probe_results.md) |
 | phase_combined_v1 — 82.8% SFT baseline | 135/163 = 82.8%; the canonical SFT baseline all downstream DPO refinements resume from (step 582) | [`audit_results/phase_combined_v1/audit_v2_full/`](audit_results/phase_combined_v1/audit_v2_full/), [`recipes/launch_production_sft.sh`](recipes/launch_production_sft.sh) |
 
+### 1.1 Audit methodology — what the 84.7% / +1.9pp claim is, and what it is *not*
+
+> **Important caveat for a hiring-manager reader.** The 84.7% / +1.9pp claim is the result of a **paired-control behavioral audit on a fixed 163-probe constitutional battery**. The candidate checkpoint and the SFT baseline are scored by the same auditor against the same probe set; the +1.9pp is the candidate-minus-baseline pass-rate delta on that fixed set. This is **not** a held-out generalization measurement on independent test data. Specifically:
+>
+> - **The eval is the 163-probe audit harness** ([sibling repository](../audit-harness-moe/), specifically `TAEY_AUDIT_V2.json` + `audit_pipeline.py` + `soma_proxy.py`). Each probe is scored by an LLM-as-judge with paired-capability controls. Per-probe model responses and per-probe auditor reasoning are in `audit_results/<checkpoint>/audit_v2/results.txt` for every audited checkpoint.
+> - **The baseline (`phase_combined_v1`, 82.8%) and the candidate (`religion_dpo_v2`, 84.7%) are scored against the SAME probe set with the SAME auditor.** Delta is candidate minus baseline.
+> - **There is no held-out test set.** The 163 probes are the full evaluation surface. Construction of a held-out test set independent of the constitutional probe authoring process is listed as future work in §5.
+> - **The 50 religion-honest preference pairs used for DPO training are different from the 163 audit probes**, so there is no direct train-on-test leakage in the conventional sense — but the probes were authored by the same team that authored the DPO corpus, which is a meaningful confounder a hiring manager should know about.
+> - **For independent verification:** clone the sibling [`research/audit-harness-moe/`](../audit-harness-moe/), run `audit_pipeline.py` against your own bake of the recipe in [`recipes/launch_religion_dpo_v2.sh`](recipes/launch_religion_dpo_v2.sh), and confirm pass-rate within audit noise. Once the published weights land (forthcoming `WEIGHTS.md`), the eval can be reproduced on a clean third-party machine without re-training.
+>
+> Translation for the cannot-lie register: the +1.9pp is `[Observed]` — measured, paired-control, reproducible-from-the-recipe — but it is `[Observed against a fixed in-house probe set]`, not `[Observed against held-out independent generalization data]`. We are not claiming it is the latter. The audit's *value* is the per-category breakdown and the paired-control structure (specifically that full-surface DPO regressed `infra_cross_system` 4/4 → 1/4 while the keystone-only variant restored it 4/4 — that's the deception-shaped-failure signal that motivated the harness), not the headline number standing alone.
+
 ---
 
 ## 2. What ships in this subdirectory
@@ -75,6 +87,7 @@ The training pipeline did not work first try. The signal we'd hope a reader take
 | combined_big_v1 scale-up — why didn't it beat phase_combined_v1? | ckpt-400 and ckpt-800 both shipped audit verdicts; neither beat the smaller baseline despite 20k vs ~7k items. Cause not isolated. | A/B with controlled data quality, learning-rate decay, longer training |
 | Config A3 / A4 — broader keystone vs o_proj-only freeze | Religion DPO v3 (Config A4, o_proj-only) shipped; comparison vs A2 across more domains pending | dedicated audit campaign across diverse refinement targets |
 | Auditor latency / variance — can we drop wall-clock without losing fidelity? | The 163-probe audit takes ~4 h wall-clock; some of that is auditor latency we have not optimized | concurrent probe execution, smaller frontier-grade auditor |
+| Held-out test set independent of probe-authoring process | The current 163-probe set was authored by the same team that authored the DPO corpus; the +1.9pp claim is robust to that confounder per the per-category control structure, but a held-out set authored by an independent process would strengthen the generalization claim | construct held-out probes via an independent author / red-team process; measure both checkpoints on the held-out set; report delta with the same paired-control structure |
 
 These are not aspirational; they're listed because they're real and they're not yet measured.
 
