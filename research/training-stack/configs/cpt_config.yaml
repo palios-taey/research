@@ -1,0 +1,21 @@
+# Full CPT — Qwen3.5-35B-A3B across 4x DGX Spark GB10
+# ZeRO-3 + from_config() + shard-streaming UMA loader
+# Source: Perplexity + Grok consensus (2026-03-16)
+base_model: /home/spark/models/Qwen3.5-35B-A3B
+training_data: /var/spark/isma/training/cpt_live.jsonl
+output_dir: /var/spark/models/palios-v1-cpt
+
+# Training
+learning_rate: 0.0001
+num_epochs: 3
+max_seq_length: 16384
+max_train_steps: 10000
+warmup_steps: 200
+
+# Logging/checkpointing
+save_steps: 500
+logging_steps: 10
+
+# Reporting
+report_to:
+  - tensorboard

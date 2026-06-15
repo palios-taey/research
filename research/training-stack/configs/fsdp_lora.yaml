@@ -1,0 +1,27 @@
+compute_environment: LOCAL_MACHINE
+debug: false
+distributed_type: FSDP
+downcast_bf16: 'no'
+fsdp_config:
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  fsdp_backward_prefetch: BACKWARD_PRE
+  fsdp_cpu_ram_efficient_loading: false  # Fix 1: disabled, manual rank-split loading
+  fsdp_forward_prefetch: false           # ChatGPT: only for static graphs
+  fsdp_offload_params: false
+  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_state_dict_type: SHARDED_STATE_DICT
+  fsdp_sync_module_states: true
+  fsdp_transformer_layer_cls_to_wrap: Qwen3_5MoeDecoderLayer  # Fix 3: only DecoderLayer, no nested wrapping
+  fsdp_use_orig_params: true
+machine_rank: 0
+main_training_function: main
+# mixed_precision set to 'no' in YAML — overridden in train_fsdp_v3.py with explicit
+# MixedPrecision(param_dtype=bf16, reduce_dtype=fp32, buffer_dtype=bf16).
+# Accelerate's mixed_precision=bf16 upcasts ALL params to fp32 → OOM on UMA.
+# The script-level override keeps params bf16 but reduces gradients in fp32.
+mixed_precision: 'no'
+num_machines: 4
+num_processes: 4
+rdzv_backend: static
+same_network: true
+use_cpu: false

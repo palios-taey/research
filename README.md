@@ -35,36 +35,48 @@ Contents:
 See [`research/audit-harness-moe/README.md`](research/audit-harness-moe/README.md)
 for full usage.
 
-### `research/training-and-retrieval-stack/` — Production Training Pipeline + Multi-Substrate Retrieval (2026)
+### `research/training-stack/` — Production Training Stack (2026)
 
-**Engineering portfolio for the full PALIOS-TAEY training stack.**
-Six production checkpoints (Qwen3.5-35B-A3B MoE + Qwen3.5-9B Dense, FSDP on a
-4-node DGX Spark GB10 cluster) with intact recipe + corpus + weights triplets,
-and a multi-substrate retrieval system (Weaviate + Neo4j + Redis) with
-query-adaptive routing, multi-scale memory, and HMM motif memory across three
-coordinated stores.
+**Real and verifiable engineering portfolio.** Production training recipes
+(Qwen3.5-35B-A3B MoE + Qwen3.5-9B Dense, FSDP on a 4-node DGX Spark GB10 cluster)
+with the actual scripts that ran, the actual configs, the audit-harness verdicts
+for each shipped checkpoint, and a `METRICS_PROVENANCE.md` mapping every headline
+number to a specific file in the repository.
 
-Headline measured results (verified against an internal canonical-metrics file):
+Headline measured results:
 
-- Config A2 keystone-attention LoRA DPO refinement: **84.7%** on the 163-probe
-  audit (+1.9pp over the 82.8% SFT baseline); all 8 infra-control categories held.
-- Phase 3 Recovery SFT (single-Spark, cross-validated): **train_loss 1.122
-  identical on two independent runs**, after a 4-Spark FSDP wedge was root-caused
-  to corpus memory pressure (RDMA send-queue saturation) and resolved by an
-  offline conversation-level chunker.
-- 4-Spark NCCL fabric: **10.23–12.57 GB/s** on the `reduce_scatter` synth probe
-  at the failing 218M-numel size; ConnectX-7 28.45.4028 + NCCL 2.28.9.
+- Config A2 keystone-attention LoRA DPO refinement: **84.7% (138/163)** on the
+  163-probe constitutional audit, **+1.9pp** over the 82.8% SFT baseline; all
+  8 infra-control categories held (4/4 restored from DPO v1's 1/4 regression).
+  Verdict in `audit_results/religion_dpo_v2/audit_v2/SUMMARY.md`; per-probe
+  responses in `results.txt`; the launcher that produced it in
+  `recipes/launch_religion_dpo_v2.sh`.
+- 4-Spark NCCL fabric verified at **10.23–12.57 GB/s** on the `reduce_scatter`
+  synth probe at the failing 218M-numel size; ConnectX-7 28.45.4028 + NCCL 2.28.9.
+- Phase 3 Recovery SFT (single-Spark, cross-validated wedge-fix proof): identical
+  train_loss on two independent runs after the offline conversation chunker
+  resolved a 4-Spark FSDP wedge root-caused to corpus memory pressure.
 
-Contents:
+Contents (the actual artifacts, not just write-ups):
 
-- `README.md` — paper-shaped lead document (headline metrics, novel architecture,
-  engineering judgment under uncertainty, honest open questions).
-- `TECHNICAL_APPENDIX.md` — full citation chains, file:line code references,
-  three-register tables.
-- `REPRODUCE.md` — step-by-step recipes (network setup, 35B path, 9B path,
-  bake-and-test, ISMA stack).
+- `recipes/` — 13 launcher scripts (the actual `.sh` that ran on the cluster).
+- `trainers/` — 4 Python files (Phase 3 trainer, Phase 2 CPT trainer, offline
+  chunker, bake script).
+- `configs/` — 10 config files (159-expert freeze mask, Phase 2 expert config
+  44KB, FSDP YAMLs, DeepSpeed JSON variants, accelerate config).
+- `audit_results/` — 11 per-checkpoint audit verdicts (~13 MB of real
+  measured-output: per-category pass/fail, per-probe model responses, failure
+  exemplars).
+- `proof_of_run/` — 4-Spark fabric verification results.
+- `METRICS_PROVENANCE.md` — every headline number → its proof file.
+- `README.md`, `TECHNICAL_APPENDIX.md`, `REPRODUCE.md` — documentation that
+  links to the above.
 
-See [`research/training-and-retrieval-stack/README.md`](research/training-and-retrieval-stack/README.md)
+The retrieval stack (ISMA) lives in a separate repository at
+[`palios-taey/isma-core`](https://github.com/palios-taey/isma-core); this
+subdirectory is training only.
+
+See [`research/training-stack/README.md`](research/training-stack/README.md)
 for the full portfolio.
 
 ### `research/ml-stack-fuzzing/` — Fuzzing the ML Inference Stack + Release-Significance Triage
