@@ -67,6 +67,43 @@ Contents:
 See [`research/training-and-retrieval-stack/README.md`](research/training-and-retrieval-stack/README.md)
 for the full portfolio.
 
+### `research/ml-stack-fuzzing/` — Fuzzing the ML Inference Stack + Release-Significance Triage
+
+**A reusable methodology for finding real memory-safety / denial-of-service
+bugs in the native untrusted-input path of LLM serving** — model-file loaders,
+tokenizers, and the grammar / structured-output compilers in front of
+constrained decoding (vLLM / SGLang-class engines).
+
+The contribution is one discipline most fuzzing write-ups skip:
+
+- **A sanitizer crash is not production impact.** An ASAN build aborts on the
+  first out-of-bounds byte; a release build usually absorbs that read and keeps
+  running. The included triage tool re-runs every unique crash on a
+  **no-sanitizer release build** and escalates only the `RELEASE-SEGV` subset —
+  the crashes a real deployment would also hit — instead of the much larger raw
+  sanitizer-crash count.
+
+Contents:
+
+- `release_significance_triage.py` — target-agnostic triage: dedup →
+  ASAN-classify → group → **release-significance filter** → escalate
+  (CI-friendly, exits non-zero on a production-significant finding).
+- `harness/fuzz_target_skeleton.cc` — multiplexed libFuzzer target skeleton
+  (every untrusted entry point behind one harness; catches expected validation
+  failures so the corpus deepens).
+- `harness/build.sh` — sanitizer build template with the non-obvious flags
+  annotated (no-LTO, debug-asserts-off, release-shaped inlining).
+
+Worked example: applied to a native structured-output / grammar-compilation
+library on the inference path; surfaced a denial-of-service finding currently
+in **GitHub coordinated disclosure (in triage, not yet public)** — affected
+library, entry points, and reproducing inputs are intentionally withheld until
+the advisory publishes, at which point the section is updated with the
+verifiable advisory link.
+
+See [`research/ml-stack-fuzzing/README.md`](research/ml-stack-fuzzing/README.md)
+for the full methodology.
+
 ## License
 
 Apache 2.0 — see `LICENSE`. Individual subdirectories may carry additional
