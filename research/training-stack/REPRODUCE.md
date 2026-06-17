@@ -16,6 +16,8 @@ Step-by-step to re-run the PALIOS-TAEY training pipeline on equivalent hardware.
 
 The recipes (`launch_*.sh` in [`recipes/`](recipes/)) are documented for the deployment that ran them. They reference paths like `/home/spark/training_outputs/...`; substitute for your hosts. Env-variable overrides are honored where present (e.g., `OUTPUT_DIR`, `RESUME_DELTA`, `DPO_DATA`, `MODEL_PATH`, `FROZEN_EXPERTS`, `KEYSTONE_LAYERS`).
 
+> **Trainer scripts — where they are.** Each recipe's `accelerate launch` line invokes its trainer by the production absolute path it ran under (e.g. `/home/spark/embedding-server/isma/scripts/spark_deploy/optimization/train_dpo_v2.py`). **All four trainers those recipes call are shipped in [`trainers/`](trainers/)** — `train_dpo_v2.py` (the MoE hybrid LoRA+ESFT DPO trainer behind the 84.7% headline), `train_fsdp_v3.py` (MoE FSDP SFT), `train_fsdp_dense_9b.py` (9B-dense FSDP SFT/CPT), plus `train_cpt_qwen35_dense.py`, `train_recovery_sft_qwen35_dense.py`, `chunk_corpus_offline.py`, and `bake_phase_combined_v1_tail_v2.py`. To reproduce, point the recipe's trainer path at the corresponding file in `trainers/`. (Two scripts are *not* shipped and are explicitly disclaimed where referenced: the NCCL synth probe — §1 below — and the `bake_orpo.py`/`bake_config_a_v2.py` bake scripts — §4 below.)
+
 ---
 
 ## 1. Network setup — NCCL dual-rail RoCEv2

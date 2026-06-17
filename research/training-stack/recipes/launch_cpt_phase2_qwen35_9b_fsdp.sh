@@ -8,7 +8,8 @@
 #   - MODEL_PATH: Qwen3.5-9B-Base (dense) instead of the 35B-A3B abliterated
 #   - DATA_PATH: tools+chat SFT corpus (68K samples)
 #   - Accelerate config: fsdp_dense_9b.yaml (Qwen3_5DecoderLayer wrap)
-#   - Script: train_sft_tools_qwen35_dense.py (HF Trainer, full FT, bucket batch)
+#   - Script: train_fsdp_dense_9b.py (FSDP+LoRA, bucket batch) — invoked below;
+#     shipped in ../trainers/train_fsdp_dense_9b.py
 #
 # Why this NCCL config (vs. the broken first attempt now archived):
 #   - NCCL_IB_HCA names the RoCE HCAs explicitly across both NICs. Without it
