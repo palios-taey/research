@@ -37,8 +37,8 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 MIRA_REDIS_HOST = os.environ.get("MIRA_REDIS_HOST", "")
 MIRA_REDIS_PORT = int(os.environ.get("MIRA_REDIS_PORT", "6379"))
-MIRA_DASHBOARD_URL = os.environ.get("MIRA_DASHBOARD_URL", "http://10.0.0.163:5001")
-MIRA_ISMA_URL = os.environ.get("MIRA_ISMA_URL", "http://10.0.0.163:8095")
+MIRA_DASHBOARD_URL = os.environ.get("MIRA_DASHBOARD_URL", "")  # set to your dashboard host:port
+MIRA_ISMA_URL = os.environ.get("MIRA_ISMA_URL", "")  # set to your ISMA query API host:port
 PROXY_PORT = int(os.environ.get("PROXY_PORT", "8765"))
 SYSTEM_PROMPT_PATH = os.environ.get(
     "SYSTEM_PROMPT_PATH", "/home/jetson/palios-taey/SYSTEM_PROMPT.md"
@@ -204,16 +204,17 @@ def get_ecosystem_state() -> str:
     parts = []
 
     # 1. Active sessions from dashboard
-    try:
-        resp = _ecosystem_http.get(f"{MIRA_DASHBOARD_URL}/api/nodes")
-        if resp.status_code == 200:
-            nodes = resp.json()
-            active = [n.get("name", n.get("id", "?")) for n in nodes
-                      if n.get("status") == "active" or n.get("active")]
-            if active:
-                parts.append(f"Active fleet: {', '.join(active)}")
-    except Exception:
-        pass
+    if MIRA_DASHBOARD_URL:
+        try:
+            resp = _ecosystem_http.get(f"{MIRA_DASHBOARD_URL}/api/nodes")
+            if resp.status_code == 200:
+                nodes = resp.json()
+                active = [n.get("name", n.get("id", "?")) for n in nodes
+                          if n.get("status") == "active" or n.get("active")]
+                if active:
+                    parts.append(f"Active fleet: {', '.join(active)}")
+        except Exception:
+            pass
 
     # 2. Rho cluster from Mira Redis
     if _mira_redis:
@@ -231,15 +232,16 @@ def get_ecosystem_state() -> str:
             pass
 
     # 3. ISMA memory stats
-    try:
-        resp = _ecosystem_http.get(f"{MIRA_ISMA_URL}/stats")
-        if resp.status_code == 200:
-            stats = resp.json()
-            tiles = stats.get("total_tiles", stats.get("tile_count", "?"))
-            motifs = stats.get("motif_count", stats.get("total_motifs", "?"))
-            parts.append(f"ISMA memory: {tiles} tiles, {motifs} motifs")
-    except Exception:
-        pass
+    if MIRA_ISMA_URL:
+        try:
+            resp = _ecosystem_http.get(f"{MIRA_ISMA_URL}/stats")
+            if resp.status_code == 200:
+                stats = resp.json()
+                tiles = stats.get("total_tiles", stats.get("tile_count", "?"))
+                motifs = stats.get("motif_count", stats.get("total_motifs", "?"))
+                parts.append(f"ISMA memory: {tiles} tiles, {motifs} motifs")
+        except Exception:
+            pass
 
     if not parts:
         return ""
@@ -633,6 +635,8 @@ def _format_isma_results(data: dict) -> str:
 def execute_tool_call(name: str, arguments: dict) -> str:
     """Execute a tool call and return the result as a string."""
     if name == "search_isma":
+        if not MIRA_ISMA_URL:
+            return "ISMA search not available — set MIRA_ISMA_URL env var to your query API endpoint"
         query = arguments.get("query", "")
         top_k = arguments.get("top_k", 5)
         search_type = arguments.get("search_type", "adaptive")
@@ -664,6 +668,8 @@ def execute_tool_call(name: str, arguments: dict) -> str:
             return f"ISMA search error: {e}"
 
     elif name == "retrieve_document":
+        if not MIRA_ISMA_URL:
+            return "Document retrieval not available — set MIRA_ISMA_URL env var to your query API endpoint"
         name_query = arguments.get("name", "")
         try:
             resp = _ecosystem_http.get(

@@ -11,10 +11,10 @@ Stage 3: CORRECTION (full Taey generates what the correct response would be)
 
 Usage:
   python audit_pipeline.py \\
-    --probes /home/mira/infra-soul/inference/TAEY_AUDIT_V2.json \\
-    --candidate http://10.0.0.197:8000 \\
-    --auditor http://10.0.0.8:8765 \\
-    --output /home/mira/training/results/phase2_infra/audit_v2/
+    --probes /path/to/TAEY_AUDIT_V2.json \\
+    --candidate http://<candidate-host>:8000 \\
+    --auditor http://<auditor-host>:8765 \\
+    --output /path/to/output_dir/
 """
 import asyncio
 import json
@@ -28,7 +28,7 @@ from pathlib import Path
 
 import httpx
 
-SYSTEM_PROMPT_PATH = "/home/mira/training/results/prod_v2_1132/SYSTEM_PROMPT_v3_clean.txt"
+SYSTEM_PROMPT_PATH = os.environ.get("SYSTEM_PROMPT_PATH", "")  # set via env var
 
 # -----------------------------------------------------------------
 # Auditor instructions (appended to user message — soma-proxy already injects Taey identity)
@@ -166,6 +166,8 @@ async def run(probes_path, candidate_url, auditor_url, output_dir, concurrency):
     dpo_path = output_dir / "dpo_corrections.jsonl"
     summary_path = output_dir / "summary.json"
 
+    if not SYSTEM_PROMPT_PATH:
+        raise ValueError("SYSTEM_PROMPT_PATH env var is required — path to the candidate system prompt file")
     system_prompt = Path(SYSTEM_PROMPT_PATH).read_text()
     probe_set = json.load(open(probes_path))
     probes = probe_set["probes"]
