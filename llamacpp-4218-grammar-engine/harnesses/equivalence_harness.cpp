@@ -432,7 +432,7 @@ static void write_report(
     std::ofstream out(path);
     out << "# llama.cpp #4218 differential language-equivalence validation\n\n";
     out << "## Result\n\n";
-    out << (st.divergences == 0 ? "PASS" : "FAIL") << ": old recognizer and GSS recognizer accept sets matched for every compared token decision.\n\n";
+    out << (st.divergences == 0 ? "PASS" : "FAIL") << ": baseline and experimental stack-sharing accept sets matched for every compared token decision.\n\n";
     out << "## Counts\n\n";
     out << "| Metric | Count |\n|---|---:|\n";
     out << "| Grammars total | " << st.grammars_total << " |\n";
@@ -465,17 +465,18 @@ static void write_report(
             out << "- Mode: `" << d.mode << "`\n";
             out << "- Prefix: `" << d.prefix << "`\n";
             out << "- Token: `" << d.token << "` piece `\"" << escape_piece(d.piece) << "\"`\n";
-            out << "- Old allowed: `" << (d.old_allowed ? "true" : "false") << "`\n";
-            out << "- GSS allowed: `" << (d.gss_allowed ? "true" : "false") << "`\n\n";
+            out << "- Baseline allowed: `" << (d.old_allowed ? "true" : "false") << "`\n";
+            out << "- Experimental allowed: `" << (d.gss_allowed ? "true" : "false") << "`\n\n";
             out << "```gbnf\n" << d.grammar << "\n```\n\n";
         }
     }
 
     out << "## Reproducibility notes\n\n";
     out << "- Observed: comparison calls the real `llama_grammar_apply_impl()` for both recognizers at every compared state.\n";
-    out << "- Observed: old and GSS grammars are initialized in-process by setting `LLAMA_GRAMMAR_GSS=0` then `1`; both use the same loaded vocab-only GGUF.\n";
+    out << "- Observed: baseline and experimental grammars are initialized in-process by setting `LLAMA_GRAMMAR_GSS=0` then `1`; both use the same loaded vocab-only GGUF.\n";
     out << "- Observed: hidden-left-recursion and epsilon-cycle adversarial grammars that the shared parser rejects are counted as common build rejections, not accept-set comparisons.\n";
     out << "- Unknown: sampled-vocab fuzzing is not a formal proof over all possible tokenizations; it is an adversarial differential search over the reported decision count.\n";
+    out << "- Unknown: this harness does not by itself prove `CHAR_ALT` multi-range, raw-byte token, clone, partial-UTF-8, or public stack-access compatibility.\n";
 }
 
 int main(int argc, char ** argv) {

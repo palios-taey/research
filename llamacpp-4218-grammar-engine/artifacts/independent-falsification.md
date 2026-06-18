@@ -1,8 +1,8 @@
 # Independent adversarial falsification
 
-A separate harness generated taxonomy-driven grammars designed to falsify naive GSS equivalence. It used full-vocabulary accept-set comparisons at every walked state.
+A separate harness generated taxonomy-driven grammars designed to falsify naive stack-sharing equivalence. It used full-vocabulary accept-set comparisons at every walked state.
 
-Result: PASS, 0 divergences.
+Observed result for this harness: PASS, 0 divergences.
 
 | Metric | Count |
 |---|---:|
@@ -25,3 +25,13 @@ Result: PASS, 0 divergences.
 | nullable-epsilon-cycles | 420 | 280 | 180,372,373 | 0 |
 
 This corpus was designed separately from the first equivalence harness. Its purpose was to find counterexamples in the areas most likely to hide stack-sharing bugs. It did not find one, but it is still adversarial testing rather than a formal proof.
+
+## Known blind spots
+
+The independent corpus missed audit-caught silent under-acceptance in the first-pass prototype:
+
+- `CHAR_ALT` multi-range handling.
+- Raw-byte token handling.
+- Clone lifetime behavior.
+
+The final root-cause fix should keep this harness, but it also needs focused semantic tests for those audited gaps.

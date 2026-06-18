@@ -409,10 +409,10 @@ static void write_report(
     std::ofstream out(path);
     out << "# llama.cpp #4218 independent falsification\n\n";
     out << "## Result\n\n";
-    out << (ts.divergences == 0 ? "PASS" : "FAIL") << ": attempted to falsify old-vs-GSS language equivalence with a taxonomy-driven adversarial corpus; divergences observed: `" << ts.divergences << "`.\n\n";
+    out << (ts.divergences == 0 ? "PASS" : "FAIL") << ": attempted to falsify baseline-vs-experimental language equivalence with a taxonomy-driven adversarial corpus; divergences observed: `" << ts.divergences << "`.\n\n";
     out << "## Run context\n\n";
     out << "- Checkout: `llama.cpp` source tree used for the run\n";
-    out << "- Candidate branch: local GSS recognizer implementation\n";
+    out << "- Experimental branch: local stack-sharing prototype\n";
     out << "- Commit under test: `26a78fc34afe7e5b93af58ee8b88c268df9569b9`\n";
     out << "- Harness source: `harnesses/independent_falsify.cpp`\n";
     out << "- Harness binary: `<build-dir>/independent_falsify`\n";
@@ -443,8 +443,8 @@ static void write_report(
             out << "### " << r.cls << " / " << r.name << " step " << r.step << "\n\n";
             out << "- Prefix: `" << r.prefix << "`\n";
             out << "- Token: `" << r.token << "` piece `\"" << escape_text(r.piece) << "\"`\n";
-            out << "- Old allowed: `" << (r.old_allowed ? "true" : "false") << "`\n";
-            out << "- GSS allowed: `" << (r.gss_allowed ? "true" : "false") << "`\n\n";
+            out << "- Baseline allowed: `" << (r.old_allowed ? "true" : "false") << "`\n";
+            out << "- Experimental allowed: `" << (r.gss_allowed ? "true" : "false") << "`\n\n";
             out << "```gbnf\n" << r.grammar << "\n```\n\n";
         }
     }
@@ -453,6 +453,7 @@ static void write_report(
     out << "- Observed: the generator in this file is taxonomy-template based and does not reuse the prior `equivalence_harness.cpp` generator.\n";
     out << "- Observed: parser-rejected patterns are reported as upfront common rejects, not treated as equivalence evidence for runtime acceptance.\n";
     out << "- Unknown: this is adversarial falsification, not a formal language-equivalence proof.\n";
+    out << "- Unknown: this harness does not by itself prove `CHAR_ALT` multi-range, raw-byte token, clone, partial-UTF-8, or public stack-access compatibility.\n";
 }
 
 int main(int argc, char ** argv) {

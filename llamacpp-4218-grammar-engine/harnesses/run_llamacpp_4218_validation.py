@@ -4,7 +4,7 @@
 The harness is intentionally algorithm-agnostic. It only asks a built
 llama.cpp tree to accept valid strings and run the existing grammar tests.
 That makes it usable for before/after measurements regardless of whether the
-candidate fix is GSS, GLL, Earley, derivatives, or another recognizer.
+engine change under test is GSS, GLL, Earley, derivatives, or another recognizer.
 """
 
 from __future__ import annotations
@@ -417,7 +417,7 @@ def write_report(
     lines.append("")
     lines.append("## Overall")
     lines.append("")
-    lines.append(f"Overall validation result for a candidate fix: **{overall}**")
+    lines.append(f"Overall validation result for the engine change under test: **{overall}**")
     lines.append("")
     lines.append("| Gate | Result | Detail |")
     lines.append("|---|---|---|")
@@ -425,7 +425,7 @@ def write_report(
     lines.append(f"| Realistic polynomial-ness | {realistic_class} | {realistic_detail} |")
     lines.append(f"| Correctness regression tests | {'PASS' if tests_pass else 'FAIL'} | {sum(t.status == 'PASS' for t in test_results)}/{len(test_results)} test binaries passed |")
     lines.append("")
-    lines.append("Interpretation: current master is expected to fail polynomial-ness. A proposed engine fix should turn the first two gates into POLYNOMIAL_PASS while keeping grammar tests passing.")
+    lines.append("Interpretation: current master is expected to fail polynomial-ness. A proposed engine change should turn the first two gates into POLYNOMIAL_PASS while keeping grammar tests passing. This growth gate is necessary but not sufficient; focused semantic tests are also required.")
     lines.append("")
     lines.append("## Synthetic 3*2^n Family")
     lines.append("")

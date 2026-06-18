@@ -22,4 +22,4 @@ Representative measured baseline timings for `n = 16`:
 | Initial standalone repro | 196,608 | 32,799.244 ms | 25,187.073 ms | 53,072 KB |
 | Validation harness baseline | 196,608 | 42,900.235 ms | not reported here | not reported here |
 
-The validation harness reached timeout at deeper settings on the baseline path. The candidate GSS path reduced the `n = 16` case to 8 active stacks and `0.034 ms` total accept time.
+The validation harness reached timeout at deeper settings on the baseline path. A first-pass stack-sharing prototype reduced the `n = 16` case to 8 active stacks and `0.034 ms` total accept time, demonstrating the mechanism but not serving as the final fix.

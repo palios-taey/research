@@ -1,6 +1,6 @@
 # Harnesses
 
-These harnesses are intended to be run from a patched llama.cpp checkout.
+These harnesses measure the #4218 growth problem and compare baseline behavior with an experimental stack-sharing implementation. Passing these harnesses is not proof of correctness; the first-pass prototype passed the large differential runs but still had audit-caught under-acceptance defects.
 
 ## Growth validation
 
@@ -8,6 +8,8 @@ These harnesses are intended to be run from a patched llama.cpp checkout.
 python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-baseline
 LLAMA_GRAMMAR_GSS=1 python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-gss
 ```
+
+Use the second command only with a checkout that implements `LLAMA_GRAMMAR_GSS` or an equivalent opt-in comparison path.
 
 The script compiles `helper_sources/llamacpp_4218_probe.cpp` if a probe binary is not already present.
 
@@ -44,3 +46,5 @@ c++ -std=c++17 -O2 path/to/llamacpp-4218-grammar-engine/harnesses/independent_fa
 ```
 
 Use a vocab-only GGUF or any model file loadable by llama.cpp in vocab-only mode.
+
+For a final root-cause fix, add focused tests for `CHAR_ALT` multi-range behavior, raw-byte tokens, clone lifetime, partial UTF-8, and public stack-access semantics.
