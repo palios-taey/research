@@ -1,11 +1,11 @@
 # Patch status
 
-`llamacpp-4218-gss-recognizer.patch` is retained as first-pass prototype and audit material.
+`llamacpp-4218-gss-recognizer.patch` is a historical first-pass prototype diff. It is retained only as audit background for the original stack-sharing mechanism.
 
-It is useful for reproducing the measured stack-sharing effect, but it is not the final fix and should not be applied as a merge proposal. A later audit found:
+Do not treat this patch as the current fix. The current audited implementation is the public branch linked from the top-level `README.md`:
 
-- `CHAR_ALT` multi-range under-acceptance.
-- Raw-byte token under-acceptance.
-- Clone-related undefined behavior risk.
+```text
+https://github.com/palios-taey/llama.cpp/tree/codex/4218-rootcause-earley
+```
 
-The active repair target is an in-place root-cause fix that merges reconverged parse threads at equivalent `(nonterminal, input position)` states while preserving existing grammar-engine semantics.
+The prototype patch predates later audit findings around multi-range character handling, raw-byte/token handling, clone safety, completion reallocation, and nullable UTF-8 EOG behavior.

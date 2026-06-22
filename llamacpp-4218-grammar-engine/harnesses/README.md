@@ -1,50 +1,51 @@
 # Harnesses
 
-These harnesses measure the #4218 growth problem and compare baseline behavior with an experimental stack-sharing implementation. Passing these harnesses is not proof of correctness; the first-pass prototype passed the large differential runs but still had audit-caught under-acceptance defects.
+The active current-branch harnesses are copied under `harnesses/current/`:
 
-## Growth validation
+- `test-grammar-compactor.cpp`
+- `test-grammar-differential.cpp`
 
-```bash
-python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-baseline
-LLAMA_GRAMMAR_GSS=1 python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-gss
-```
+They are intended to match the files added to the public branch at commit `3e4aa92bed972d60cbf9a02795d40bed10a60338`.
 
-Use the second command only with a checkout that implements `LLAMA_GRAMMAR_GSS` or an equivalent opt-in comparison path.
+## Current Branch Usage
 
-The script compiles `helper_sources/llamacpp_4218_probe.cpp` if a probe binary is not already present.
-
-## Reject-path benchmark
+From a checkout of the public branch:
 
 ```bash
-c++ -std=c++17 -O2 path/to/llamacpp-4218-grammar-engine/harnesses/reject_apply_bench.cpp \
-  -I. -Iinclude -Isrc -Iggml/include -Lbuild/bin -lllama -Wl,-rpath,$PWD/build/bin \
-  -o build/reject_apply_bench
+cmake -S . -B build-compactor \
+  -DLLAMA_BUILD_TESTS=ON \
+  -DLLAMA_BUILD_EXAMPLES=OFF \
+  -DLLAMA_BUILD_SERVER=OFF \
+  -DGGML_NATIVE=OFF
 
-./build/reject_apply_bench path/to/vocab.gguf path/to/grammar.gbnf 128000 30
-LLAMA_GRAMMAR_GSS=1 ./build/reject_apply_bench path/to/vocab.gguf path/to/grammar.gbnf 128000 30
+cmake --build build-compactor \
+  --target test-grammar-compactor test-grammar-differential \
+           test-grammar-integration test-llama-grammar test-gbnf-validator \
+  -j$(nproc)
+
+./build-compactor/bin/test-grammar-compactor
+./build-compactor/bin/test-grammar-compactor --long
+./build-compactor/bin/test-grammar-differential
+ctest --test-dir build-compactor -R "(grammar|gbnf)" --output-on-failure
 ```
 
-## Differential equivalence
+For sanitizer coverage:
 
 ```bash
-c++ -std=c++17 -O2 path/to/llamacpp-4218-grammar-engine/harnesses/equivalence_harness.cpp \
-  -I. -Iinclude -Isrc -Iggml/include -Lbuild/bin -lllama -Wl,-rpath,$PWD/build/bin \
-  -o build/equivalence_harness
+cmake -S . -B build-asan \
+  -DLLAMA_BUILD_TESTS=ON \
+  -DLLAMA_BUILD_EXAMPLES=OFF \
+  -DLLAMA_BUILD_SERVER=OFF \
+  -DGGML_NATIVE=OFF \
+  -DLLAMA_SANITIZE_ADDRESS=ON \
+  -DLLAMA_SANITIZE_UNDEFINED=ON
 
-./build/equivalence_harness path/to/vocab.gguf equivalence.md \
-  path/to/llamacpp-4218-grammar-engine/harnesses/fixtures/workflow_trailing_strategy/grammar.gbnf
+cmake --build build-asan --target test-grammar-compactor -j$(nproc)
+ASAN_OPTIONS=detect_leaks=0:abort_on_error=1 \
+UBSAN_OPTIONS=halt_on_error=1 \
+  ./build-asan/bin/test-grammar-compactor
 ```
 
-## Independent falsification
+## Historical Harnesses
 
-```bash
-c++ -std=c++17 -O2 path/to/llamacpp-4218-grammar-engine/harnesses/independent_falsify.cpp \
-  -I. -Iinclude -Isrc -Iggml/include -Lbuild/bin -lllama -Wl,-rpath,$PWD/build/bin \
-  -o build/independent_falsify
-
-./build/independent_falsify path/to/vocab.gguf independent-falsification.md
-```
-
-Use a vocab-only GGUF or any model file loadable by llama.cpp in vocab-only mode.
-
-For a final root-cause fix, add focused tests for `CHAR_ALT` multi-range behavior, raw-byte tokens, clone lifetime, partial UTF-8, and public stack-access semantics.
+The other harness files in this directory are retained for historical reproduction of the first-pass prototype and early root-cause measurements. They are not the active current-branch validation gate.

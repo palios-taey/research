@@ -1,95 +1,103 @@
-# llama.cpp #4218 root-cause foundation
+# llama.cpp #4218 grammar engine audit package
 
-This artifact is a public research foundation for llama.cpp issue #4218. It documents the measured exponential blowup, the root mechanism, validation harnesses, and the audit status of a first-pass prototype.
+This is a public audit and validation package for the in-place grammar engine repair for llama.cpp issue #4218.
 
-It does not present the included prototype patch as the final fix.
+Public branch:
 
-## Current status
-
-- Observed: the baseline grammar engine can reach `3 * 2^n` active continuation stacks on a minimal ambiguous recursive grammar. At `n = 16`, measured baseline runs reached `196,608` stacks.
-- Observed: a first-pass opt-in graph-structured-stack prototype collapsed the measured pathological stack counts on the synthetic and realistic fixtures.
-- Observed: a later code audit found correctness defects in that first-pass prototype: `CHAR_ALT` multi-range under-acceptance, raw-byte token under-acceptance, and clone-related undefined behavior.
-- Inferred: the root-cause target is still stack sharing, but the implementation should be rebuilt in place around the existing grammar engine semantics rather than shipped as the first-pass augment shape.
-- Unknown: the final in-place root-cause patch is not included here. The differential fuzzing results below are useful evidence, not a proof.
-
-## Problem
-
-The current grammar engine can enumerate exponentially many continuation stacks for ambiguous recursive grammars. A minimal family is:
-
-```gbnf
-root ::= nest
-nest ::= "a" nest "b" | "a" nest "c" |
+```text
+https://github.com/palios-taey/llama.cpp/tree/codex/4218-rootcause-earley
 ```
 
-On input `a^n b^n`, the engine reaches `3 * 2^n` active stacks. At `n = 16`, the measured baseline reached `196,608` stacks. A representative baseline validation run spent `42,900.235 ms` in token acceptance for that case; a separate initial repro run on the same grammar measured `32,799.244 ms`.
+Current audited commit:
 
-The same failure mode appears in realistic JSON-schema-derived grammars. A recursive workflow schema with a late `strategy` discriminator reached `81,920` active stacks at depth 13 and spent `57,554.288 ms` in token acceptance. Controls that moved the discriminator earlier or removed the recursive union stayed under 10 stacks.
-
-## Mechanism
-
-The mechanism is reconvergence without sharing. The engine keeps concrete continuation-stack vectors, so parse threads that temporarily differ and later reach the same grammar state remain duplicated. The root-cause repair target is to merge threads that reconverge at the same `(nonterminal, input position)` while preserving existing token, byte, `CHAR_ALT`, partial-UTF-8, clone, and stack-access semantics.
-
-Graph-structured stack or equivalent chart-style sharing is the right mechanism class. The implementation detail still matters: sharing must be integrated without narrowing the accepted language.
-
-## First-pass prototype result
-
-| Case | Baseline max stacks | Prototype max stacks | Baseline accept time | Prototype accept time |
-|---|---:|---:|---:|---:|
-| Synthetic `a^n b^n`, n=16 | 196,608 | 8 | 42,900.235 ms | 0.034 ms |
-| Recursive workflow schema, depth 13 | 81,920 | 10 | 57,554.288 ms | 0.371 ms |
-
-These numbers show that merging reconverged parse threads addresses the performance mechanism. They do not certify the first-pass patch as correct or mergeable.
-
-Reject-path benchmarking with 128k token candidates also improved in the measured case: median `llama_grammar_apply_impl()` time was `4,654.760 us` on the baseline path and `3,811.255 us` on the first-pass prototype path.
-
-## Validation
-
-Differential validation compared old and prototype accept sets at generation states using the real `llama_grammar_apply_impl()` implementation in both modes.
-
-| Corpus | Grammars built by both | States | Token decisions | Divergences |
-|---|---:|---:|---:|---:|
-| Existing-test-style plus generated corpus | 238 | 16,804 | 138,018,304 | 0 |
-| Independent adversarial falsification corpus | 2,275 | 30,298 | 1,522,686,586 | 0 |
-| Combined | 2,513 | 47,102 | 1,660,704,890 | 0 |
-
-The independent corpus specifically targeted failure modes expected to break naive stack merging: contingent-pop behavior, mutually recursive cycles, nullable epsilon cycles, nullable repetition bodies, high reconvergence ambiguity, and long-range dependencies.
-
-## Validation blind spots
-
-This is adversarial differential testing, not a formal proof of language equivalence. It missed silent under-acceptance defects later found by code audit:
-
-- `CHAR_ALT` multi-range handling accepted too little in the first-pass prototype.
-- Raw-byte token handling accepted too little in the first-pass prototype.
-- Clone behavior had undefined-behavior risk in the first-pass prototype.
-
-The `get_stacks()` compatibility shim in the prototype exported the active terminal frontier compactly. It was sufficient for the validation harnesses here, but it did not reconstruct every historical concrete continuation vector from the shared representation. That is another reason the prototype is audit material, not the final fix.
-
-## Root-cause target
-
-The target for a publishable fix is an in-place grammar-engine change that:
-
-- Preserves current language acceptance for all token forms and grammar element types.
-- Merges parse threads only when they reconverge at equivalent `(nonterminal, input position)` states.
-- Avoids concrete continuation-vector explosion in recursive ambiguous grammars.
-- Keeps clone, reset, stack access, and partial UTF-8 behavior within existing API expectations.
-- Uses differential fuzzing plus focused code review and targeted unit tests for the audited blind spots.
-
-## How to reproduce
-
-1. Check out llama.cpp.
-2. Run the baseline growth harness to reproduce the problem.
-
-```bash
-python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-baseline
+```text
+3e4aa92bed972d60cbf9a02795d40bed10a60338
+grammar: reject EOG while UTF-8 is incomplete
 ```
 
-3. Optional historical prototype check: apply `patches/llamacpp-4218-gss-recognizer.patch` only if you want to reproduce the first-pass stack-sharing measurements. Do not treat that patch as the final fix.
+## Status
 
-```bash
-LLAMA_GRAMMAR_GSS=1 python3 path/to/llamacpp-4218-grammar-engine/harnesses/run_llamacpp_4218_validation.py build --llama-dir . --out-dir 4218-gss
+- Observed: the branch replaces concrete continuation-stack enumeration with chart items and compacts sealed origins through normalized resume summaries.
+- Observed: the branch keeps focused regression tests for stack compaction, clone-vs-commit parity, token terminals, `TOKEN_NOT`, split UTF-8, nullable UTF-8 EOG handling, and completion reallocation stress.
+- Observed: the latest validation run passed the focused compactor harness, the expanded differential harness, six grammar/GBNF ctests, an ASAN/UBSAN focused run, and a full server-enabled build.
+- Inferred: the current design addresses the #4218 exponential stack mechanism without the first-pass prototype's semantic blind spots.
+- Unknown: upstream review outcome and language equivalence outside the tested grammar corpus remain open.
+
+## What Changed
+
+The original #4218 failure mode was exponential continuation-stack growth on ambiguous recursive grammars. The current branch moves the recognizer to chart-style items keyed by rule, dot, and origin, then compacts sealed origins that have equivalent resume behavior. This preserves the need for semantically distinct input positions while avoiding unbounded retention for reconvergent states such as `a*`.
+
+The current package is not the older opt-in graph-structured-stack prototype. Historical prototype materials remain in `artifacts/` and `patches/` only as background and should not be treated as the current merge candidate.
+
+## Package Contents
+
+- `AUDIT_TRAIL.md`: five independent automated review findings and the fixes they drove.
+- `VALIDATION.md`: fresh validation commands, public-safe outputs, and limitations.
+- `harnesses/current/test-grammar-compactor.cpp`: current focused compactor and regression harness source.
+- `harnesses/current/test-grammar-differential.cpp`: current expanded clone-vs-commit differential harness source.
+- `harnesses/README.md`: how to run the current harnesses from a llama.cpp checkout.
+- `artifacts/`: historical root-cause measurements and first-pass prototype background.
+- `patches/`: historical prototype patch retained for audit context only.
+
+## Current Validation Snapshot
+
+Focused compactor, short run:
+
+```text
+astar n=1000 origins=2 sealed=1 current_items=5 stored_items=5 resume_entries=1
+balanced-prefix n=64 origins=65 sealed=64 current_items=4 stored_items=67 resume_entries=63
+token-not-empty-candidate excluded=0 allowed=1
+nullable-utf8-eog partial=0 completed=1 wrong=0
+completion-reallocation-stress callers=8191 advanced=8191 final_items=16384
 ```
 
-4. Build and run `harnesses/equivalence_harness.cpp` with a vocab-only GGUF to compare baseline and prototype accept sets in-process.
-5. Build and run `harnesses/independent_falsify.cpp` with a vocab-only GGUF for the independent adversarial corpus.
+Focused compactor, long run:
 
-See `harnesses/README.md` for concrete compiler commands.
+```text
+astar n=100000 origins=2 sealed=1 current_items=5 stored_items=5 resume_entries=1
+balanced-prefix n=512 origins=513 sealed=512 current_items=4 stored_items=515 resume_entries=511
+token-not-empty-candidate excluded=0 allowed=1
+nullable-utf8-eog partial=0 completed=1 wrong=0
+completion-reallocation-stress callers=8191 advanced=8191 final_items=16384
+long_elapsed=0:18.96 maxrss_kb=8252
+```
+
+Differential harness:
+
+```text
+grammar-differential decisions=2328 fnv64=b77904254b842fea
+```
+
+Grammar/GBNF ctest gate:
+
+```text
+100% tests passed, 0 tests failed out of 6
+```
+
+ASAN/UBSAN focused compactor run:
+
+```text
+asan_stderr_bytes=0
+```
+
+Full server-enabled build:
+
+```text
+completed to 100%, including llama-server and llama-app
+```
+
+See `VALIDATION.md` for commands, trace-equivalence notes, and limitations.
+
+## How To Review
+
+1. Check out the branch above at commit `3e4aa92bed972d60cbf9a02795d40bed10a60338`.
+2. Build with tests enabled.
+3. Run the current harnesses in `tests/` from the branch, or compare against the copied sources under `harnesses/current/`.
+4. Read `AUDIT_TRAIL.md` before reviewing the patch; it lists the concrete defects independent reviews found and how the branch was changed.
+5. Treat `artifacts/` and `patches/` as historical context, not as the active fix.
+
+For exact build and test commands, use `VALIDATION.md`.
+
+## Limits
+
+The validation here is adversarial differential testing plus focused regression coverage. It is not a formal proof. The strongest evidence is that the final branch preserves the expanded precompactor decision trace for the tested corpus while adding targeted tests for review-found blind spots.
