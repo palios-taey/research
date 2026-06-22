@@ -2,6 +2,14 @@
 
 This file records five independent automated review findings that drove concrete branch changes. Reviewer labels are generic by design; no private session names or host details are required to validate the findings.
 
+## RE-AUDIT UPDATE (2026-06-22): Finding 1 is REOPENED — not fully closed
+
+A clean re-audit on this commit found that Finding 1's fresh-column repair is **incomplete**. The repair triggers only when a token yields zero complete code points (`src/llama-grammar.cpp:2118`, gated on `code_points.size() == 1`). A token piece containing **one or more complete code points followed by a trailing incomplete UTF-8 sequence** bypasses the repair and can preserve a stale `TOKEN` frontier across the token boundary — an over-accept ("branch laundering" across tokens).
+
+Important honesty note: this defect is **not** caught by byte-identical comparison to upstream master, because master has the same gap, and the differential corpus lacked a mixed complete-plus-partial token piece. So the earlier "byte-identical to master" evidence does not establish closure of this case.
+
+Required fix: generalize the fresh-frontier handling to **every** token whose decoded partial remainder is nonzero (`n_remain != 0`), not only the zero-complete-codepoint case, and apply the same partial-frontier filtering to `llama_grammar_accept_str()`. **Status: fix in progress.** This engine is **NOT submission-ready** until Finding 1 is fully closed and re-validated against a mixed-piece corpus. Findings 2–5 and the compactor/clone/cache/EOG checks were confirmed closed in the re-audit.
+
 Current audited branch tip:
 
 ```text
