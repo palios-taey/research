@@ -116,6 +116,31 @@ verifiable advisory link.
 See [`research/ml-stack-fuzzing/README.md`](research/ml-stack-fuzzing/README.md)
 for the full methodology.
 
+### `llamacpp-4218-grammar-accept-crash/` — llama.cpp grammar accept-path crash fix
+
+**A server-terminating crash in llama.cpp's GBNF grammar sampler, fixed with a
+transactional commit.** On the forced-accept paths (lazy-grammar trigger replay,
+special/control tokens from chat templates and tool-calling), a non-conformant
+token reaches the grammar commit path, empties the stacks, and throws an uncaught
+exception that terminates the whole server (open issues #23677, #14413). The fix
+makes the commit transactional — grammar stacks and UTF-8 decoder state commit
+together or not at all — deleting both `throw` sites in ~30 lines, **byte-identical
+to upstream `master` on all valid inputs** (differential FNV64 match), perf within
+noise. Documents the **three dead iterations** (each killed by a binary
+counterexample) before the validated shape — a worked example of binary-as-oracle,
+multi-reviewer default-refute validation.
+
+See [`llamacpp-4218-grammar-accept-crash/README.md`](llamacpp-4218-grammar-accept-crash/README.md).
+
+### `llamacpp-4218-grammar-engine/` — llama.cpp grammar engine rewrite (exploratory)
+
+Exploratory chart/recognizer rewrite targeting the exponential continuation-stack
+blow-up in #4218. Retained as a research record; **superseded in practice** by the
+focused accept-path crash fix above (a second grammar engine is not mergeable when
+`llguidance` already serves that need upstream).
+
+See [`llamacpp-4218-grammar-engine/README.md`](llamacpp-4218-grammar-engine/README.md).
+
 ## License
 
 Apache 2.0 — see `LICENSE`. Individual subdirectories may carry additional

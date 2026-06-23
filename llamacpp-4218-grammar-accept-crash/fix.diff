@@ -1,0 +1,76 @@
+diff --git a/src/llama-grammar.cpp b/src/llama-grammar.cpp
+index badcbfd0f..384d0d41e 100644
+--- a/src/llama-grammar.cpp
++++ b/src/llama-grammar.cpp
+@@ -4,6 +4,7 @@
+ #include "llama-vocab.h"
+ #include "llama-sampler.h"
+ 
++#include <atomic>
+ #include <cmath>
+ #include <algorithm>
+ #include <cstdint>
+@@ -1005,6 +1006,15 @@ static bool llama_grammar_detect_left_recursion(
+     return false;
+ }
+ 
++static void llama_grammar_warn_nonconformant_forced_input(const std::string & piece, llama_token token) {
++    static std::atomic<bool> warned{false};
++    if (!warned.exchange(true, std::memory_order_relaxed)) {
++        LLAMA_LOG_WARN("grammar: ignoring non-conformant forced token '%s' (id %d); "
++                       "grammar stacks unchanged (further warnings suppressed)\n",
++                       piece.c_str(), (int) token);
++    }
++}
++
+ const llama_grammar_rules & llama_grammar_get_rules(const struct llama_grammar * grammar) {
+     return grammar->rules;
+ }
+@@ -1443,13 +1453,26 @@ void llama_grammar_accept_str(struct llama_grammar & grammar, const std::string
+     const auto   decoded     = decode_utf8(piece, grammar.partial_utf8);
+     const auto & code_points = decoded.first;
+ 
++    llama_grammar_stacks stacks_new = grammar.stacks;
++
+     for (auto it = code_points.begin(), end = code_points.end() - 1; it != end; ++it) {
+-        llama_grammar_accept(&grammar, *it);
++        llama_grammar_stacks next_stacks;
++
++        for (const auto & stack : stacks_new) {
++            llama_grammar_accept_chr(grammar, stack, *it, next_stacks);
++        }
++
++        stacks_new = std::move(next_stacks);
++        if (stacks_new.empty()) {
++            break;
++        }
+     }
+ 
+-    grammar.partial_utf8 = decoded.second;
+-    if (grammar.stacks.empty()) {
+-        throw std::runtime_error("Unexpected empty grammar stack after accepting piece: " + piece);
++    if (!stacks_new.empty()) {
++        grammar.stacks = std::move(stacks_new);
++        grammar.partial_utf8 = decoded.second;
++    } else {
++        llama_grammar_warn_nonconformant_forced_input(piece, LLAMA_TOKEN_NULL);
+     }
+ }
+ 
+@@ -1500,11 +1523,10 @@ void llama_grammar_accept_token(struct llama_grammar & grammar, llama_token toke
+         }
+     }
+ 
+-    grammar.stacks = std::move(stacks_new);
+-    grammar.partial_utf8 = decoded.second;
+-
+-    if (grammar.stacks.empty()) {
+-        throw std::runtime_error("Unexpected empty grammar stack after accepting piece: " + piece + " (" + std::to_string(token) + ")");
++    if (!stacks_new.empty()) {
++        grammar.stacks = std::move(stacks_new);
++        grammar.partial_utf8 = decoded.second;
++    } else {
++        llama_grammar_warn_nonconformant_forced_input(piece, token);
+     }
+ }
+-
