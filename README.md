@@ -141,6 +141,12 @@ focused accept-path crash fix above (a second grammar engine is not mergeable wh
 
 See [`llamacpp-4218-grammar-engine/README.md`](llamacpp-4218-grammar-engine/README.md).
 
+### `structured-output-soundness/` — differential testing the constrained-decoding stack
+
+**A method for finding soundness bugs in constrained decoding (xgrammar / outlines / llguidance — the backends behind vLLM, SGLang, guidance), plus a worked example that became an upstream fix.** A soundness bug is when the compiled grammar accepts output the JSON Schema forbids — the "constrained" decoder silently emits invalid JSON. Found by differential testing each engine's accept/reject against a ground-truth `jsonschema` validator and flagging false-accepts. First worked example: xgrammar silently dropped `multipleOf`, so `{"type":"number","multipleOf":2}` accepted `3`; fixed with a modulo-N DFA + fail-closed taxonomy. Upstream PR: mlc-ai/xgrammar#670 (open). CPU-reproducible, hardware-agnostic.
+
+See [`structured-output-soundness/README.md`](structured-output-soundness/README.md).
+
 ## License
 
 Apache 2.0 — see `LICENSE`. Individual subdirectories may carry additional
