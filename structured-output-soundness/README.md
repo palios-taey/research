@@ -48,7 +48,7 @@ Ground truth rejects `1`, because it matches both branches. Exactly-one is only 
 ## Status (cannot-lie)
 
 - xgrammar `multipleOf`: PR **submitted, open, not merged** as of this writing — https://github.com/mlc-ai/xgrammar/pull/670
-- xgrammar `oneOf`: fix **built, validated, and audited; upstream PR prepared, not yet submitted** as of this writing.
+- xgrammar `oneOf`: PR **submitted, open, not merged** as of this writing — https://github.com/mlc-ai/xgrammar/pull/672
 - The method generalizes to harder schema classes (patternProperties, `$ref` recursion, `format`) and the other engines (outlines, llguidance); those sweeps are ongoing.
 
 ## Register

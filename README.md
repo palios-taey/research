@@ -4,6 +4,43 @@ Public research artifacts from the PALIOS-TAEY project. Each subdirectory is a
 self-contained piece of work with its own README. Use this top-level index to
 find specific artifacts.
 
+## Upstream contributions
+
+Fixes contributed back to the open-source dependencies this project uses. Status
+is stated exactly and is verifiable with `gh pr view <n> --repo <repo>` — re-check
+before citing, these move.
+
+**Merged**
+
+- [dottxt-ai/outlines#1875](https://github.com/dottxt-ai/outlines/pull/1875) —
+  remove the dead `get_llama_tokenizer_types` workaround and its test (+1/−55).
+  Merged 2026-06-29.
+
+**Reviewed, pending merge**
+
+- [ggml-org/llama.cpp#24093](https://github.com/ggml-org/llama.cpp/pull/24093) —
+  guard the server's chat-template "thinking" probe against apply-time jinja
+  errors so a malformed template falls back instead of crashing startup (+7/−7).
+  Two maintainer approvals on record; mergeable; awaiting re-approval after a
+  rebase that cleared a base conflict from the server-context refactor.
+
+**Open (awaiting review)**
+
+- [mlc-ai/xgrammar#670](https://github.com/mlc-ai/xgrammar/pull/670) — JSON Schema
+  `multipleOf` soundness (see `structured-output-soundness/`) (+266/−3).
+- [mlc-ai/xgrammar#672](https://github.com/mlc-ai/xgrammar/pull/672) — JSON Schema
+  `oneOf` exact-one soundness (+568/−7).
+- [safetensors/safetensors#774](https://github.com/safetensors/safetensors/pull/774) —
+  allow disjoint packed-storage slices in duplicate removal (+89/−2).
+- [safetensors/safetensors#801](https://github.com/safetensors/safetensors/pull/801) —
+  best-effort file preallocation in buffered writes (+8/−1).
+- [guidance-ai/llguidance#354](https://github.com/guidance-ai/llguidance/pull/354) —
+  lark `\xHH` escapes in string literals (+49/−3).
+- [facebookresearch/faiss#5259](https://github.com/facebookresearch/faiss/pull/5259) —
+  validate legacy IVFFlat per-list codes size against ids size (+27/−0).
+- [protectai/modelscan#348](https://github.com/protectai/modelscan/pull/348) —
+  handle pickle `GET`/`BINGET` to a missing memo without a crash (+64/−1).
+
 ## Currently public
 
 ### `research/audit-harness-moe/` — Paired-Capability-Control Audit Harness for MoE Fine-Tunes
